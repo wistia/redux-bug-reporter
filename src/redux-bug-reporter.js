@@ -15,20 +15,16 @@ import createSubmit from './integrations/default'
 const getActions = () => {
   return new Promise(resolve => {
     chrome.runtime.sendMessage({type: 'getActions'}, ({payload}) => {
-      console.log("actions", payload);
       resolve(payload);
     });
-  // middlewaredata.getactions(),
   });
 };
 
 const getInitialState = () => {
   return new Promise(resolve => {
     chrome.runtime.sendMessage({type: 'getInitialState'}, ({payload}) => {
-      console.log("state", payload);
       resolve(payload);
     });
-  // initialState = middlewareData.getBugReporterInitialState()
   });
 };
 
