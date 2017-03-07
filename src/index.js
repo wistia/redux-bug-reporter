@@ -1,4 +1,6 @@
-import ReduxBugReporter from './redux-bug-reporter'
-export storeEnhancer from './store-enhancer'
+import ReduxBugReporter                from './redux-bug-reporter';
+import storeEnhancer, {middlewareData} from './store-enhancer';
 
-export default ReduxBugReporter
+export {storeEnhancer};
+export {middlewareData};
+export default ReduxBugReporter;
