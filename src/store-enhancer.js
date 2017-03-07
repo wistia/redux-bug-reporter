@@ -25,9 +25,9 @@ export const finishPlayback = function (payload) {
     type: finishPlaybackActionType
   }
 }
-let storeEnhancer = f => f
-if (isClientRender()) {
-  storeEnhancer = (createStore) => (originalReducer, initialState, enhancer) => {
+
+const storeEnhancer = (createStore) => {
+  return (originalReducer, initialState, enhancer) => {
     let playbackEnabled = false
     // Handle the overloading in the reducer here
     let reducer = function (state, action = {}) {

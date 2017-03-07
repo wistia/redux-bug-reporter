@@ -7,7 +7,38 @@ import { middlewareData, overloadStore, initializePlayback, finishPlayback, play
 import isClientRender from './is-client-render'
 import { listenToErrors, errorData } from './utils'
 import createSubmit from './integrations/default'
-require('es6-promise').polyfill()
+
+
+// require('es6-promise').polyfill()
+
+
+const getActions = () => {
+  return new Promise(resolve => {
+    chrome.runtime.sendMessage({type: 'getActions'}, ({payload}) => {
+      console.log("actions", payload);
+      resolve(payload);
+    });
+  // middlewaredata.getactions(),
+  });
+};
+
+const getInitialState = () => {
+  return new Promise(resolve => {
+    chrome.runtime.sendMessage({type: 'getInitialState'}, ({payload}) => {
+      console.log("state", payload);
+      resolve(payload);
+    });
+  // initialState = middlewareData.getBugReporterInitialState()
+  });
+};
+
+const getBackgroundData = () => {
+  return Promise.all([
+    getActions(),
+    getInitialState(),
+  ]);
+};
+
 
 // On the server, UnconnectedBugReporter is a placeholder component
 let UnconnectedBugReporter = () => {
@@ -125,7 +156,7 @@ if (isClientRender()) {
       this.setState({loading: true})
 
       let state = storeState
-      let initialState = middlewareData.getBugReporterInitialState()
+      // let initialState = middlewareData.getBugReporterInitialState()
       let promise
       if (redactStoreState) {
         initialState = redactStoreState(initialState)
@@ -136,38 +167,44 @@ if (isClientRender()) {
         state = customEncode(state)
         initialState = customEncode(initialState)
       }
-      const newBug = {
-        projectName,
-        state,
-        initialState,
-        actions: middlewareData.getActions(),
-        consoleErrors: errorData.getErrors(),
-        reporter,
-        description,
-        screenshotURL,
-        notes,
-        meta,
-        useragent: window.navigator.userAgent,
-        windowDimensions: [window.innerWidth, window.innerHeight],
-        windowLocation: window.location.href
-      }
 
-      // if submit is a function, call it instead of fetching
-      // and attach to the promise returned
-      if (isFunction(submit)) {
-        promise = submit(newBug)
-      } else {
-        let submitFn = createSubmit({ url: submit })
-        promise = submitFn(newBug)
-      }
 
-      promise.then((json = {}) => {
-        let {bugURL} = json
-        this.setState({loading: false, bugFiled: true, bugURL, expanded: true})
-      }).catch((error) => {
-        console.error('Error filing bug', error)
-        this.setState({loading: false, bugFiled: true, error, expanded: true})
-      })
+      getBackgroundData().then(([actions, initialState]) => {
+        const newBug = {
+          projectName,
+          state,
+          initialState,
+          actions: actions,
+          consoleErrors: errorData.getErrors(),
+          reporter,
+          description,
+          screenshotURL,
+          notes,
+          meta,
+          useragent: window.navigator.userAgent,
+          windowDimensions: [window.innerWidth, window.innerHeight],
+          windowLocation: window.location.href
+        }
+
+
+        // if submit is a function, call it instead of fetching
+        // and attach to the promise returned
+        if (isFunction(submit)) {
+          promise = submit(newBug)
+        } else {
+          let submitFn = createSubmit({ url: submit })
+          promise = submitFn(newBug)
+        }
+
+        promise.then((json = {}) => {
+          let {bugURL} = json
+          this.setState({loading: false, bugFiled: true, bugURL, expanded: true})
+        }).catch((error) => {
+          console.error('Error filing bug', error)
+          this.setState({loading: false, bugFiled: true, error, expanded: true})
+        })
+      });
+
     },
 
     dismiss: function (e) {
